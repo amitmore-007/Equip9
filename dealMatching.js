@@ -1,60 +1,58 @@
-class SellerPrices {
+class PriceManager {
     constructor() {
-        this.prices = [];
+        this.listings = [];
     }
 
-    addPrice(price) {
-        this.prices.push(price);
-        this.prices.sort((a, b) => a - b);
+    insert(price) {
+        this.listings.push(price);
+        this.listings.sort((a, b) => a - b);
     }
 
-    getLowest() {
-        return this.prices.length > 0 ? this.prices[0] : null;
+    getCheapest() {
+        return this.listings.length ? this.listings[0] : null;
     }
 
-    removeLowest() {
-        return this.prices.shift(); 
+    removeCheapest() {
+        return this.listings.shift();
     }
 
-    hasPrices() {
-        return this.prices.length > 0;
+    hasEntries() {
+        return this.listings.length > 0;
     }
 }
 
-function findBestDeals(buyers, sellers) {
-    let sellerData = new Map();
+function matchBuyersToSellers(purchaseRequests, vendorOffers) {
+    let marketplace = new Map();
 
-   
-    for (let [item, price] of sellers) {
-        if (!sellerData.has(item)) {
-            sellerData.set(item, new SellerPrices());
+    for (const [equipment, price] of vendorOffers) {
+        if (!marketplace.has(equipment)) {
+            marketplace.set(equipment, new PriceManager());
         }
-        sellerData.get(item).addPrice(price);
+        marketplace.get(equipment).insert(price);
     }
 
-    let matchedDeals = [];
+    let finalDeals = [];
 
-    for (let [item, maxBudget] of buyers) {
-        if (!sellerData.has(item)) {
-            matchedDeals.push(null);
+    for (const [desiredItem, maxSpend] of purchaseRequests) {
+        if (!marketplace.has(desiredItem)) {
+            finalDeals.push(null);
             continue;
         }
 
-        let availablePrices = sellerData.get(item);
+        let priceList = marketplace.get(desiredItem);
 
-        
-        while (availablePrices.hasPrices() && availablePrices.getLowest() > maxBudget) {
-            availablePrices.removeLowest();
+        while (priceList.hasEntries() && priceList.getCheapest() > maxSpend) {
+            priceList.removeCheapest();
         }
 
-        matchedDeals.push(availablePrices.hasPrices() ? availablePrices.removeLowest() : null);
+        finalDeals.push(priceList.hasEntries() ? priceList.removeCheapest() : null);
     }
 
-    return matchedDeals;
+    return finalDeals;
 }
 
+// Example Execution
+let buyerRequests = [["excavator", 50000], ["bulldozer", 70000]];
+let sellerListings = [["excavator", 45000], ["bulldozer", 68000], ["excavator", 48000]];
 
-let buyersList = [["excavator", 50000], ["bulldozer", 70000]];
-let sellersList = [["excavator", 45000], ["bulldozer", 68000], ["excavator", 48000]];
-
-console.log(findBestDeals(buyersList, sellersList));
+console.log(matchBuyersToSellers(buyerRequests, sellerListings));
